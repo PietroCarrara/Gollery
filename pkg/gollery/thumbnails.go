@@ -3,12 +3,41 @@ package gollery
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path"
 
 	"gopkg.in/vansante/go-ffprobe.v2"
 )
+
+type Thumbnail struct {
+	Path string
+	Type FileType
+}
+
+func (f File) GetThumbnails(dir string) []Thumbnail {
+	name := path.Join(dir, f.Path)
+
+	files, err := ioutil.ReadDir(name)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			log.Printf("warn: error while fetching thumbnails for '%s': %e\n", f.Path, err)
+		}
+		return make([]Thumbnail, 0)
+	}
+
+	thumbs := make([]Thumbnail, 0, len(files))
+	for _, file := range files {
+		thumbs = append(thumbs, Thumbnail{
+			Path: path.Join(f.Path, file.Name()),
+			Type: typeFromFilename(file.Name()),
+		})
+	}
+
+	return thumbs
+}
 
 func (f File) GenThumbnails(dir string, force bool) error {
 	name := path.Join(dir, f.Path)
