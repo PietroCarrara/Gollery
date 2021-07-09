@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/PietroCarrara/Gollery/pkg/frontend"
 	"github.com/PietroCarrara/Gollery/pkg/gollery"
@@ -27,6 +28,19 @@ func main() {
 						Usage:   "The tags to apply to the group",
 						Aliases: []string{"t"},
 					},
+					&cli.BoolFlag{
+						Name:  "recursive",
+						Usage: "Does this group look for files in subdirectories?",
+					},
+					&cli.StringFlag{
+						Name:  "pattern",
+						Usage: "The regex to match on files",
+					},
+					&cli.StringSliceFlag{
+						Name:    "extension",
+						Usage:   "Only look for files containing these extensions (-e mp4 -e jpg)",
+						Aliases: []string{"e"},
+					},
 				},
 			},
 			{
@@ -40,6 +54,11 @@ func main() {
 						Value: 8080,
 					},
 				},
+			},
+			{
+				Name:   "list",
+				Usage:  "lists all of the files that are part of the gallery",
+				Action: list,
 			},
 		},
 		Flags: []cli.Flag{
@@ -60,15 +79,20 @@ func main() {
 func group(c *cli.Context) error {
 	config := getConfig(c)
 
-	base := path.Dir(c.String("config-path"))
+	if c.String("pattern") != "" && len(c.StringSlice("extension")) > 0 {
+		return fmt.Errorf("--pattern and --extension are not usable together")
+	}
 
-	pwd, _ := os.Getwd()
+	pattern := c.String("pattern")
+	if len(c.StringSlice("extension")) > 0 {
+		pattern = "(?i)" + strings.Join(c.StringSlice("extension"), "|") + "$"
+	}
 
-	dir := path.Join(pwd, base, c.Args().Get(0))
 	directory := gollery.FileDir{
-		Path:      dir,
+		Path:      path.Clean(c.Args().Get(0)),
 		Tags:      c.StringSlice("tags"),
 		Recursive: c.Bool("recursive"),
+		Pattern:   pattern,
 	}
 
 	for _, d := range config.Directories {
@@ -80,6 +104,22 @@ func group(c *cli.Context) error {
 	config.Directories = append(config.Directories, directory)
 
 	return saveConfig(c, config)
+}
+
+func list(c *cli.Context) error {
+	config := getConfig(c)
+
+	for _, dir := range config.Directories {
+		files, err := dir.ListFiles()
+		if err != nil {
+			log.Println(err)
+		}
+		for _, file := range files {
+			fmt.Println(file.Path)
+		}
+	}
+
+	return nil
 }
 
 func serve(c *cli.Context) error {
