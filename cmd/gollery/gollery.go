@@ -77,7 +77,10 @@ func main() {
 }
 
 func group(c *cli.Context) error {
-	config := getConfig(c)
+	config, _, err := getConfig(c)
+	if err != nil {
+		return err
+	}
 
 	if c.String("pattern") != "" && len(c.StringSlice("extension")) > 0 {
 		return fmt.Errorf("--pattern and --extension are not usable together")
@@ -88,17 +91,49 @@ func group(c *cli.Context) error {
 		pattern = "(?i)" + strings.Join(c.StringSlice("extension"), "|") + "$"
 	}
 
+	dirPath := path.Clean(c.Args().Get(0))
+
+	// Try to find a group to put the new tags inside
+	for _, d := range config.Directories {
+		cleanPath := path.Clean(d.Path)
+
+		if cleanPath == dirPath || strings.HasPrefix(dirPath, cleanPath) {
+			if cleanPath == dirPath {
+				// Add tags directly to this dir
+				for _, tag := range c.StringSlice("tags") {
+					if !contains(d.Tags, tag) {
+						d.Tags = append(d.Tags, tag)
+					}
+				}
+			} else {
+				// Add tags as children of this dir
+				name := strings.Trim(strings.TrimPrefix(dirPath, cleanPath), "/")
+
+				for _, tag := range c.StringSlice("tags") {
+					if !contains(d.ChildTags[name], tag) {
+						d.ChildTags[name] = append(d.ChildTags[name], tag)
+					}
+				}
+			}
+
+			// Warn about unused flags
+			for _, flag := range []string{"recursive", "pattern", "extension"} {
+				if c.IsSet(flag) {
+					log.Printf("warn: flag '--%s' is not supported when grouping files that already belong in a group. Ignoring...\n", flag)
+				}
+			}
+
+			return saveConfig(c, config)
+		}
+	}
+
+	// If we did not find a previous directory to put this info inside,
+	// create a new one
 	directory := gollery.FileDir{
-		Path:      path.Clean(c.Args().Get(0)),
+		Path:      dirPath,
 		Tags:      c.StringSlice("tags"),
 		Recursive: c.Bool("recursive"),
 		Pattern:   pattern,
-	}
-
-	for _, d := range config.Directories {
-		if path.Join(d.Path) == path.Join(directory.Path) {
-			return fmt.Errorf("group is already added")
-		}
 	}
 
 	config.Directories = append(config.Directories, directory)
@@ -107,7 +142,10 @@ func group(c *cli.Context) error {
 }
 
 func list(c *cli.Context) error {
-	config := getConfig(c)
+	config, _, err := getConfig(c)
+	if err != nil {
+		return err
+	}
 
 	for _, dir := range config.Directories {
 		files, err := dir.ListFiles()
@@ -129,8 +167,13 @@ func serve(c *cli.Context) error {
 	return http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", c.Int("port")), nil)
 }
 
-func getConfig(c *cli.Context) gollery.Config {
-	config := gollery.Config{}
+func getConfig(c *cli.Context) (config gollery.Config, pwd string, err error) {
+	config = gollery.Config{}
+
+	pwd, err = os.Getwd()
+	if err != nil {
+		return config, pwd, err
+	}
 
 	if contents, err := os.Open(c.String("config-file")); err == nil {
 		defer contents.Close()
@@ -138,7 +181,7 @@ func getConfig(c *cli.Context) gollery.Config {
 		json.Unmarshal(bytes, &config)
 	}
 
-	return config
+	return
 }
 
 func saveConfig(c *cli.Context, config gollery.Config) error {
@@ -156,4 +199,14 @@ func saveConfig(c *cli.Context, config gollery.Config) error {
 	_, err = contents.Write(bytes)
 
 	return err
+}
+
+func contains(haystack []string, needle string) bool {
+	for _, str := range haystack {
+		if needle == str {
+			return true
+		}
+	}
+
+	return false
 }
