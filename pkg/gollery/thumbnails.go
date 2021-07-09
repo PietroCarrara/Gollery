@@ -49,7 +49,7 @@ func (f File) GenThumbnails(dir string, force bool) error {
 
 		margins := .1 // 10%
 		start := margins * float64(totalLength)
-		length := float64(totalLength) - 2*margins*float64(totalLength) // Cut start and end margins
+		length := float64(totalLength) - 2*start // Cut start and end margins
 
 		// Make small video segments
 		for i := 0; i < thumbCount; i++ {
