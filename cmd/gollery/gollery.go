@@ -115,7 +115,7 @@ func list(c *cli.Context) error {
 			log.Println(err)
 		}
 		for _, file := range files {
-			fmt.Println(file.Path)
+			fmt.Printf("%s: %v\n", file.Path, file.Tags)
 		}
 	}
 

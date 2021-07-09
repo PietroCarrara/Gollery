@@ -47,13 +47,30 @@ type TagConfig struct {
 }
 
 func (f FileDir) ListFiles() ([]File, error) {
-	return f.listFiles(f.Path)
+	return f.listFiles(".")
+}
+
+func (f FileDir) TagsOf(filepath string) []string {
+	relFilename := strings.TrimPrefix(filepath, f.Path)
+
+	tags := f.Tags
+	curr := ""
+	for _, nextPart := range strings.Split(relFilename, "/") {
+		curr = path.Join(curr, nextPart)
+
+		// Tags + childTags if we match a name in the childTags object
+		if childTags, ok := f.ChildTags[curr]; ok {
+			tags = append(tags, childTags...)
+		}
+	}
+
+	return tags
 }
 
 func (fd FileDir) listFiles(dir string) ([]File, error) {
 	var res []File
 
-	files, err := ioutil.ReadDir(dir)
+	files, err := ioutil.ReadDir(path.Join(fd.Path, dir))
 	if err != nil {
 		return res, err
 	}
@@ -80,17 +97,11 @@ func (fd FileDir) listFiles(dir string) ([]File, error) {
 				continue
 			}
 
-			// Tags + childTags if we match a name in the childTags object
-			tags := fd.Tags
-			if childTags, ok := fd.ChildTags[relFilename]; ok {
-				tags = append(tags, childTags...)
-			}
-
 			res = append(res, File{
-				Path:  path.Join(dir, file.Name()),
+				Path:  path.Join(fd.Path, relFilename),
 				Type:  typeFromFilename(file.Name()),
 				Mtime: file.ModTime(),
-				Tags:  tags,
+				Tags:  fd.TagsOf(relFilename),
 			})
 		}
 	}
