@@ -48,7 +48,7 @@ func Thumb(c *cli.Context) error {
 	fmt.Println()
 	defer fmt.Println()
 	for i, file := range files {
-		fmt.Printf("\rProgress: %.2f%%", float64(i)/float64(len(files)))
+		fmt.Printf("\rProgress: %.2f%%", float64(i*100)/float64(len(files)))
 
 		err := file.GenThumbnails(thumbDir, c.Bool("force-regen"))
 		if err != nil {

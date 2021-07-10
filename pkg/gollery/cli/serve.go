@@ -85,6 +85,7 @@ func (a *apiFileFS) Open(name string) (http.File, error) {
 
 func jsonRes(res http.ResponseWriter, obj interface{}) error {
 	res.Header().Add("Content-Type", "application/json")
+	res.Header().Add("Access-Control-Allow-Origin", "*")
 
 	enc := json.NewEncoder(res)
 	return enc.Encode(obj)

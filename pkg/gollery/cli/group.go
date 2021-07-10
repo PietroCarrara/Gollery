@@ -22,7 +22,7 @@ func Group(c *cli.Context) error {
 
 	pattern := c.String("pattern")
 	if len(c.StringSlice("extension")) > 0 {
-		pattern = "(?i)" + strings.Join(c.StringSlice("extension"), "|") + "$"
+		pattern = "(?i)(" + strings.Join(c.StringSlice("extension"), "|") + ")$"
 	}
 
 	dirPath := path.Clean(c.Args().Get(0))

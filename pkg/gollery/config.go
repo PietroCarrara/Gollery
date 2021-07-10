@@ -43,7 +43,7 @@ type File struct {
 }
 
 type TagConfig struct {
-	Thumbnail string `json:"thumbnail"`
+	Thumbnail Thumbnail `json:"thumbnail"`
 }
 
 func (f FileDir) ListFiles() ([]File, error) {

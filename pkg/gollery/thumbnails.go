@@ -13,8 +13,8 @@ import (
 )
 
 type Thumbnail struct {
-	Path string
-	Type FileType
+	Path string   `json:"path"`
+	Type FileType `json:"type"`
 }
 
 func (f File) GetThumbnails(dir string) []Thumbnail {
@@ -78,7 +78,7 @@ func (f File) GenThumbnails(dir string, force bool) error {
 
 		margins := .1 // 10%
 		start := margins * float64(totalLength)
-		length := float64(totalLength) - 2*start // Cut start and end margins
+		length := float64(totalLength) - start // Cut the start
 
 		// Make small video segments
 		for i := 0; i < thumbCount; i++ {
@@ -89,14 +89,14 @@ func (f File) GenThumbnails(dir string, force bool) error {
 				"-i",
 				f.Path,
 				"-map",
-				"0:v",
+				"0:v:0",
 				"-t",
 				fmt.Sprintf("%f", videoDuration),
 				"-vf",
 				"scale=-2:240",
 				"-preset",
 				"veryfast",
-				path.Join(name, fmt.Sprintf("thumb-%d.mp4", i+1)),
+				path.Join(name, fmt.Sprintf("thumb-%03d.mp4", i+1)),
 			)
 
 			err := makeThumb.Run()
