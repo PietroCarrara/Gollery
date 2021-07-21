@@ -22,8 +22,8 @@ func main() {
 						Aliases: []string{"t"},
 					},
 					&cli.BoolFlag{
-						Name:  "recursive",
-						Usage: "Does this group look for files in subdirectories?",
+						Name:  "no-recursion",
+						Usage: "Does this group not look for files in subdirectories?",
 					},
 					&cli.StringFlag{
 						Name:  "pattern",
