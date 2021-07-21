@@ -66,13 +66,6 @@ func main() {
 				},
 			},
 		},
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "config-file",
-				Usage: "Indicates the config file to use",
-				Value: "./gollery.json",
-			},
-		},
 	}
 
 	err := app.Run(os.Args)
