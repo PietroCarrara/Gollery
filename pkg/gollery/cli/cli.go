@@ -9,13 +9,8 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func getConfig(c *cli.Context) (config gollery.Config, pwd string, err error) {
+func getConfig(c *cli.Context) (config gollery.Config, err error) {
 	config = gollery.Config{}
-
-	pwd, err = os.Getwd()
-	if err != nil {
-		return config, pwd, err
-	}
 
 	if contents, err := os.Open(c.String("config-file")); err == nil {
 		defer contents.Close()

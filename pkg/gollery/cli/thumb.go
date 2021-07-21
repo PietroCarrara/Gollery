@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path"
 	"syscall"
 
 	"github.com/PietroCarrara/Gollery/pkg/gollery"
@@ -14,12 +13,12 @@ import (
 func Thumb(c *cli.Context) error {
 	var files []gollery.File
 
-	config, pwd, err := getConfig(c)
+	config, err := getConfig(c)
 	if err != nil {
 		return err
 	}
 
-	thumbDir := path.Join(pwd, ".gollery/thumbs")
+	const thumbDir = ".gollery/thumbs"
 
 	err = os.MkdirAll(thumbDir, os.FileMode(0777))
 	if err != nil || (false && thumbDir == "") {

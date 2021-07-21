@@ -8,7 +8,7 @@ import (
 )
 
 func List(c *cli.Context) error {
-	config, _, err := getConfig(c)
+	config, err := getConfig(c)
 	if err != nil {
 		return err
 	}

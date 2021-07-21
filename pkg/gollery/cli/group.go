@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"log"
+	"os"
 	"path"
 	"strings"
 
@@ -11,7 +12,7 @@ import (
 )
 
 func Group(c *cli.Context) error {
-	config, _, err := getConfig(c)
+	config, err := getConfig(c)
 	if err != nil {
 		return err
 	}
@@ -28,6 +29,13 @@ func Group(c *cli.Context) error {
 args:
 	for _, arg := range c.Args().Slice() {
 		dirPath := path.Clean(arg)
+		if !path.IsAbs(dirPath) {
+			pwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			dirPath = path.Join(pwd, dirPath)
+		}
 
 		// Try to find a group to put the new tags inside
 		for _, d := range config.Directories {
