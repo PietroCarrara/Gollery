@@ -53,7 +53,8 @@ func (f FileDir) ListFiles() ([]File, error) {
 func (f FileDir) TagsOf(filepath string) []string {
 	relFilename := strings.TrimPrefix(filepath, f.Path)
 
-	tags := f.Tags
+	tags := make([]string, len(f.Tags))
+	copy(tags, f.Tags)
 	curr := ""
 	for _, nextPart := range strings.Split(relFilename, "/") {
 		curr = path.Join(curr, nextPart)
