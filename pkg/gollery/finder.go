@@ -18,6 +18,11 @@ type FinderFile struct {
 	ID int `json:"id"`
 }
 
+type FinderTag struct {
+	Tag string `json:"tag"`
+	TagConfig
+}
+
 func (c Config) Finder() (Finder, error) {
 	finder := Finder{
 		config:      c,
@@ -43,19 +48,22 @@ func (c Config) Finder() (Finder, error) {
 	return finder, nil
 }
 
-func (f Finder) FindTags() []string {
-	keys := make([]string, 0, len(f.tagsToFiles))
+func (f Finder) FindTags() []FinderTag {
+	tags := make([]FinderTag, 0, len(f.tagsToFiles))
 
-	for k := range f.tagsToFiles {
-		keys = append(keys, k)
+	for key := range f.tagsToFiles {
+		tags = append(tags, FinderTag{
+			Tag:       key,
+			TagConfig: f.config.TagConfig[key],
+		})
 	}
 
-	sort.Slice(keys, func(i, j int) bool {
+	sort.Slice(tags, func(i, j int) bool {
 		// Sort by the file count in each tag, reversed
-		return !(len(f.tagsToFiles[keys[i]]) < len(f.tagsToFiles[keys[j]]))
+		return !(len(f.tagsToFiles[tags[i].Tag]) < len(f.tagsToFiles[tags[j].Tag]))
 	})
 
-	return keys
+	return tags
 }
 
 func (f Finder) FindByTag(tag string) []FinderFile {
