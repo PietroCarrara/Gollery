@@ -19,6 +19,10 @@ var finder gollery.Finder
 type apiFileFS struct {
 }
 
+type frontendFS struct {
+	fs http.FileSystem
+}
+
 type apiFile struct {
 	gollery.FinderFile
 	Thumbs []gollery.Thumbnail `json:"thumbs"`
@@ -43,7 +47,11 @@ func Serve(c *cli.Context) error {
 
 	http.Handle("/files/", http.StripPrefix("/files", files))
 	http.Handle("/thumbs/", http.StripPrefix("/thumbs", thumbs))
-	http.Handle("/", http.FileServer(http.FS(frontend.Frontend)))
+
+	front := &frontendFS{
+		fs: http.FS(frontend.Frontend),
+	}
+	http.Handle("/", http.FileServer(front))
 
 	log.Printf("Listening on port http://localhost:%d\n", c.Int("port"))
 	return http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", c.Int("port")), nil)
@@ -81,6 +89,18 @@ func (a *apiFileFS) Open(name string) (http.File, error) {
 	f := finder.FindByID(id)
 
 	return os.Open(f.Path)
+}
+
+// Access files from the frontend. If no file is found,
+// open index.html
+func (f *frontendFS) Open(name string) (http.File, error) {
+	file, err := f.fs.Open(name)
+
+	if os.IsNotExist(err) {
+		return f.fs.Open("index.html")
+	}
+
+	return file, err
 }
 
 func jsonRes(res http.ResponseWriter, obj interface{}) error {
