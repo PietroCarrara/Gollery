@@ -2,8 +2,10 @@ package cli
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 
 	"github.com/PietroCarrara/Gollery/pkg/gollery"
@@ -34,6 +36,8 @@ func Thumb(c *cli.Context) error {
 		files = append(files, dirFiles...)
 	}
 
+	shouldStop := false
+
 	// Don't let the program die at a Ctrl+C, so we can delete
 	// the thumbnails that we were generating
 	sig := make(chan os.Signal, 1)
@@ -41,6 +45,7 @@ func Thumb(c *cli.Context) error {
 	go func() {
 		for range sig {
 			fmt.Println("\nStopping...")
+			shouldStop = true
 		}
 	}()
 
@@ -51,7 +56,11 @@ func Thumb(c *cli.Context) error {
 
 		err := file.GenThumbnails(thumbDir, c.Bool("force-regen"))
 		if err != nil {
-			return err
+			log.Printf("\rfailed to thumbnail file \"%s\": %s\n", path.Base(file.Path), err)
+		}
+
+		if shouldStop {
+			return nil
 		}
 	}
 	fmt.Print("\rProgress: 100%  ")
