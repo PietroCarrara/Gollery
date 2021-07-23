@@ -38,8 +38,15 @@ args:
 		}
 
 		// Try to find a group to put the new tags inside
-		for _, d := range config.Directories {
+		for i := range config.Directories {
+			d := &config.Directories[i]
+
 			cleanPath := path.Clean(d.Path)
+
+			// Make sure ChildTags is a valid map
+			if d.ChildTags == nil {
+				d.ChildTags = make(map[string][]string)
+			}
 
 			if cleanPath == dirPath || strings.HasPrefix(dirPath, cleanPath) {
 				if cleanPath == dirPath {
